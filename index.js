@@ -1,61 +1,81 @@
-// Arrays to keep track of each task's state
-const taskTitles = [];
-const taskComplete = [];
-const taskDescriptions = [];
+class Account {
+  constructor(username) {
+    this.username = username;
+    this.transactions = [];
+  }
 
-// Create a new task by adding to the arrays
-// A new task will be created as incomplete
-function newTask(title, description) {
-  const task = {
-    title: title,
-    description: description,
-    complete: false,
-
-    logState: function() {
-      console.log(`${this.title} has${this.complete ? " " : " not "}been completed`);
-    },
-
-    markCompleted: function() {
-      this.complete = true;
+  get balance() {
+    // Calculate the balance using the transaction objects.
+    let balance = 0;
+    for (let t of this.transactions) {
+    	balance += t.value;
     }
-  };
-  return task;
+    return balance;
+  }
+
+  addTransaction(transaction) {
+    this.transactions.push(transaction);
+  }
+
+}
+
+class Transaction {
+  constructor(amount, account) {
+    this.amount  = amount;
+    this.account = account;
+  }
+
+  commit() {
+    if (!this.isAllowed()) return false;
+    this.time = new Date();
+    this.account.addTransaction(this);
+    return true;
+  }
+}
+
+class Deposit extends Transaction {
+  get value() {
+    return this.amount
+  }
+
+  isAllowed() {
+    // deposits always allowed thanks to capitalism.
+    return true;
+  }
+}
+
+class Withdrawal extends Transaction {
+  get value() {
+    return -this.amount;
+  }
+
+  isAllowed() {
+    // note how it has access to this.account b/c of parent
+    return (this.account.balance - this.amount >= 0);
+  }
 }
 
 // DRIVER CODE BELOW
 
-const task1 = newTask("Clean Cat Litter", "Take all the 💩 out of the litter box");
-const task2 = newTask("Do Laundry", "😨");
-const tasks = [task1, task2];
+const myAccount = new Account();
 
-task1.logState(); // Clean Cat Litter has not been completed
-task1.markCompleted();
-task1.logState(); // Clean Cat Litter has been completed
+console.log('Starting Account Balance: ', myAccount.balance);
 
-// for now, let's just make sure we see our tasks
-console.log(tasks);
+console.log('Attempting to withdraw even $1 should fail...');
+const t1 = new Withdrawal(1.00, myAccount);
+console.log('Commit result:', t1.commit());
+console.log('Account Balance: ', myAccount.balance);
 
-// prints out the provided task's details
-function logTaskState(task) {
-  console.log(`${task.title} has${task.complete ? " " : " not "}been completed`);
-}
+console.log('Depositing should succeed...');
+const t2 = new Deposit(9.99, myAccount);
+console.log('Commit result:', t2.commit());
+console.log('Account Balance: ', myAccount.balance);
 
-// marks the provided task as completed
-function completeTask(task) {
-  task.complete = true;
-}
+console.log('Withdrawal for 9.99 should be allowed...');
+const t3 = new Withdrawal(9.99, myAccount);
+console.log('Commit result:', t3.commit());
 
-logTaskState(task1); // Clean Cat Litter has not been completed
-completeTask(task1);
-logTaskState(task1); // Clean Cat Litter has been completed
+console.log('Ending Account Balance: ', myAccount.balance);
+console.log("Lookings like I'm broke again");
 
-console.log(tasks);
-
-// DRIVER CODE BELOW
-
-newTask("Clean Cat Litter"); // task 0
-newTask("Do Laundry"); // task 1
-
-logTaskState(0); // Clean Cat Litter has not been completed
-completeTask(0);
-logTaskState(0); // Clean Cat Litter has been completed
+console.log('Account Transaction History: ', myAccount.transactions);
